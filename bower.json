@@ -1,0 +1,30 @@
+{
+  "name": "angular-users",
+  "main": [
+    "scripts/module.js",
+    "scripts/services/users.js",
+    "scripts/services/user-interceptor.js",
+    "scripts/directives/user-switches.js",
+    "scripts/directives/email-available.js"
+  ],
+  "homepage": "https://github.com/Life-Letters/angular-user-service",
+  "authors": [
+    "Torben Sko <torben.sko@lifeletters.com.au>"
+  ],
+  "description": "Manages Life Letter users",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.4.9",
+    "ng-lodash": "~0.4.0",
+    "angular-cookies": "~1.4.9"
+  }
+}

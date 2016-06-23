@@ -1,0 +1,137 @@
+<html ng-app="demo">
+<head>
+	<title>Life Letters User Service</title>
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		.form-control { margin-bottom: 5px; }
+		pre { font-size: 8pt; }
+		h4 { border-top: 1px solid rgba(0,0,0,0.1); margin-top:40px; padding-top:10px; }
+		p { color: #aaa; font-size:10pt; }
+	</style>
+</head>
+<body ng-controller="main">
+	
+
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-4">
+
+				<h3>Login</h3>
+				<form novalidate ng-submit="login()">
+					<input type="text" class="form-control" ng-model="credentials.email" placeholder="email">						
+					<input type="password" class="form-control" ng-model="credentials.password" placeholder="password">		<button type="submit" class="form-control btn btn-primary">Login</button>
+				</form>
+
+				<a ng-click="fetchUser()">Refresh/fetch user details</a>
+
+				<h4>Actions.</h4>
+				<a ng-click="logout()">Log out</a><br>
+
+				<h4>Type check.</h4>
+				<p>
+					Uses the <code>isClinician</code>, <code>isPatient</code>, etc functions.
+				</p>
+				<p>
+					<span ng-repeat="type in userTypes">
+						<label class="label label-default" ng-class="{'label-success': loggedInUser['is'+type]()}">{{ type }}</label>
+					</span>
+				</p>
+
+				<h4>Conditionals.</h4>
+				<p>
+					Controlled via the <code>show-user</code> and <code>show-anonymous</code> directives.
+				</p>
+				<div class="list-group">
+					<div class="list-group-item" show-anonymous>
+						Anonymous user content
+					</div>
+					<div class="list-group-item" show-user>
+						Logged in user content
+					</div>
+					<div class="list-group-item" show-user="Patient">
+						Patient only content
+					</div>
+					<div class="list-group-item" show-user="Clinician">
+						Clinician only content
+					</div>
+				</div>
+
+				<h4>Validators.</h4>
+				<p>Email available</p>
+				<form name="emailAvailable">
+					<div class="form-group" ng-class="{'has-error': emailAvailable.email.$invalid}">
+		        <label class="control-label" for="email">Email</label>
+		        <input type="email" name="email" class="form-control" placeholder="Email"
+		        		ng-model="email"
+		        		required email-available />
+
+		        <p class="help-block" ng-if="emailAvailable.email.$error.required">
+		        	Email is required</p>
+		        <p class="help-block" ng-if="emailAvailable.email.$error.email">
+		        	Not recognised as an email address</p>
+		        <p class="help-block" ng-if="emailAvailable.email.$error.emailAvailable">
+		        	Email address is already taken</p>
+      		</div>
+				</form>
+			</div><!-- .col-sm-6 -->
+
+			<div class="col-sm-4">
+				<h3>User</h3>
+				<pre>{{ loggedInUser | json }}</pre>
+			</div><!-- .col-sm-4 -->
+			<div class="col-sm-4">
+				<h3>Orders</h3>
+				<pre>{{ orders | json }}</pre>
+			</div><!-- .col-sm-8 -->
+		</div><!-- .row -->
+	</div><!-- .container -->
+
+	<script src="bower_components/angular/angular.js"></script>
+	<script src="bower_components/ng-lodash/build/ng-lodash.js"></script>
+	<script src="bower_components/angular-cookies/angular-cookies.js"></script>
+
+	<script src="scripts/module.js"></script>
+	<script src="scripts/services/users.js"></script>
+	<script src="scripts/services/user-interceptor.js"></script>
+	<script src="scripts/directives/user-switches.js"></script>
+	<script src="scripts/directives/email-available.js"></script>
+
+	<script>
+		angular.module('demo', ['life.users'])
+			.config(function ($httpProvider, usersProvider) {
+				usersProvider.setUrl('https://ll-user-service-dev.herokuapp.com/api/v1/');
+				usersProvider.addBehaviour('fetchOrders', function(user) { 
+						return user.fetch('orders');
+					});
+				$httpProvider.interceptors.push('userInterceptor');
+			})
+			.controller('main', function($scope, users) {
+				$scope.credentials = {};
+				$scope.userTypes = users.userTypes;
+				$scope.orders = [];
+
+				$scope.$watch('loggedInUser', function() {
+					if ( !$scope.loggedInUser ) { return; }
+					$scope.loggedInUser.fetchOrders()
+						.then(function(orders) { 
+							$scope.orders = orders; 
+						});
+				});
+
+				$scope.fetchUser = function() {
+					users.fetchUser(1);
+				};
+
+				$scope.login = function() {
+					users.logIn($scope.credentials.email, $scope.credentials.password)
+						.then(function(user) {
+							$scope.user = user;
+						});
+				};
+				$scope.logout = function() {
+					users.logOut();
+				};
+			});
+	</script>
+</body>
+</html>

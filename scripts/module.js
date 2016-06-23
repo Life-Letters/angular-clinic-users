@@ -1,0 +1,1 @@
+angular.module('life.users', ['ngLodash', 'ngCookies']);

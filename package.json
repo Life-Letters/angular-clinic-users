@@ -1,0 +1,13 @@
+{
+  "name": "angular-user-service",
+  "description": "Manages Life Letter users",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Life-Letters/angular-user-service.git"
+  },
+  "author": "Torben Sko <torben.sko@lifeletters.com.au>",
+  "dependencies": {
+    "express": "^4.13.4",
+    "morgan": "^1.6.1"
+  }
+}
