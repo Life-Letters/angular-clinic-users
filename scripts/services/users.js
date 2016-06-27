@@ -12,8 +12,11 @@ angular.module('life.users')
     
     var rootUrl = null,
         loginPath = '/login',
+        listDoctorsPath = '/doctors',
+        appointmentsPath = '/appointments',
         behaviours = {},
-        userCookieName = 'lifeletteruser'+(window.cookies ? '-'+window.cookies:''),
+        doctorCookieName = 'lifeLetterCurrentDoctor'+(window.cookies ? '-'+window.cookies:''),
+        patientCookieName = 'lifeLetterCurrentPatient'+(window.cookies ? '-'+window.cookies:''),
         userTypes = [
           'Clinician',
           'Patient',
@@ -36,7 +39,8 @@ angular.module('life.users')
       }
 
       // Expose the user to the view
-      $rootScope.loggedInUser = null;
+      $rootScope.currentDoctor = null;
+      $rootScope.currentPatient = null;
 
       // Adds instance specific methods to the user object
       function initUser(user) {
@@ -81,7 +85,7 @@ angular.module('life.users')
         }
 
         user.isLoggedInUser = function() { 
-          return user.id === $rootScope.loggedInUser.id; 
+          return user.id === $rootScope.currentDoctor.clinicianCode; 
         }
 
         user.sync = function() {
@@ -104,165 +108,126 @@ angular.module('life.users')
         return user;
       }
 
-      function fetchUserData(id) {
-        var path = rootUrl+'users/'+id;
-
-        return $http.get(path)
-          .then(function(response) {
-            return response.data;
-          }, function(e) {
-            $log.error(e);
-            return $q.reject();
-          });
-      }
-
-      function setCurrentUser(user) {
-        // Ensure the user has the madatory details
+      function setCurrentDoctor(doctor) {
+        // Ensure the doctor has the madatory details
         var minimum = [
-              'id', 
-              'authToken',
-              'title',
-              'firstName',
-              'lastName',
-              'userType',
+              'clinicianCode'
             ];
 
-        if ( lodash.intersection(minimum, lodash.keys(user)).length !== minimum.length ) {
-          $log.warn('missing details', minimum, lodash.keys(user));
+        if ( lodash.intersection(minimum, lodash.keys(doctor)).length !== minimum.length ) {
+          $log.warn('missing details', minimum, lodash.keys(doctor));
           return false;
         }
 
-        initUser(user);
-        $http.defaults.headers.common.Authorization = user.authToken;
-        $cookies.putObject(userCookieName, _.pick(user, minimum));
+        // initUser(doctor);
+        // $http.defaults.headers.common.Authorization = doctor.authToken;
+        $cookies.putObject(doctorCookieName, doctor);
 
-        return $rootScope.loggedInUser = user;
+        return $rootScope.currentDoctor = doctor;
+      }
+
+      function setCurrentPatient(patient) {
+        // Ensure the patient has the madatory details
+        var minimum = [
+              'userid'
+            ];
+
+        if ( lodash.intersection(minimum, lodash.keys(patient)).length !== minimum.length ) {
+          $log.warn('missing details', minimum, lodash.keys(patient));
+          return false;
+        }
+
+        // initUser(patient);
+        // $http.defaults.headers.common.Authorization = user.authToken;
+        $cookies.putObject(patientCookieName, patient);
+        return $rootScope.currentPatient = patient;
       }
 
       function clearCurrentUser() {
         $http.defaults.headers.common.Authorization = '';
-        $rootScope.loggedInUser = null;
-        $cookies.remove(userCookieName);
+        $rootScope.currentPatient = null
+        $rootScope.currentDoctor = null;
+        $cookies.remove(doctorCookieName);
+        $cookies.remove(patientCookieName);
       }
 
       // Restore the user from previous session
-      if ( _.isObject( $cookies.getObject(userCookieName) ) ) {
-        setCurrentUser( $cookies.getObject(userCookieName) );
+      if ( _.isObject( $cookies.getObject(doctorCookieName) ) ) {
+        setCurrentDoctor( $cookies.getObject(doctorCookieName) );
+      }
 
-        if ( $rootScope.loggedInUser ) {
-          // Flesh out the user. This also lets us check the session is still valid.
-          fetchUserData( $rootScope.loggedInUser.id )
-            .then(function(user) {
-              // Copy the rest of the values across
-              lodash.extend($rootScope.loggedInUser, user);
-            }, function(err) {
-              // Session has expired
-              clearCurrentUser();
-            });        
-        }
+      // Restore patient too
+      if ( _.isObject( $cookies.getObject(patientCookieName) ) ) {
+        setCurrentPatient( $cookies.getObject(patientCookieName) );
       }
       
       return {
         loginPath: loginPath,
         userTypes: userTypes,
-        createUser: function(details) {
-          if( !details.type ) {
-            $log.error('missing type');
-            return $q.reject();
-          }
-          var url = rootUrl+details.type+'s';
 
-          return $http.post(url, details)
-            .then(function(response) {
-              return setCurrentUser(response.data);
-            }, function(error) {
-              return $q.reject(error);
-            });
+        // TODO: make it actually login
+        setCurrentDoctor: function(doctor) {
+          setCurrentDoctor(doctor);
         },
-        logIn: function(email, password) {
-          var url = rootUrl+'users/login',
-              body = {
-                email: email,
-                password: password,
-              };
 
-          return $http.post(url, body)
-            .then(function(response) {
-              return setCurrentUser(response.data);
-            }, function(error) {
-              return $q.reject(error);
-            });
+        setCurrentPatient: function(patient){
+          setCurrentPatient(patient)
         },
+
         logOut: function() {
           clearCurrentUser();
         },
-        getLoggedInUser: function() {
-          return $rootScope.loggedInUser;
-        },
-        isEmailAvailable: function(email) {
-          var url = rootUrl+'users/email-available',
-              body = {
-                email: email,
-              };
 
-          return $http.post(url, body)
+        listDoctors: function(clinicID){
+          var path = rootUrl+clinicID+listDoctorsPath
+          return $http.get(path)
             .then(function(response) {
               return response.data;
-            }, function(error) {
-              return $q.reject(error);
+            }, function(e) {
+              $log.warn(e);
+              return $q.reject(e);
             });
         },
-        /** 
-         * Finds the clinician via their:
-         *  - Life Letters shortcode
-         *  - APHRA number
-         *  - email 
-         */
-        findClinician: function(code) {
-          var url = rootUrl+'users/exists',
-              body = {
-                referralCode: code,
-                email: code,
-                ahpraNumber: code,
-              };
 
-          return $http.post(url, body)
+        listPatientForCurrentUser: function(){
+          // Get appontment list
+          var path = 'https://private-e81a7-lifelettersclinicapp.apiary-mock.com/appointments'
+
+          // var path = rootUrl+appointmentsPath
+
+          return $http.get(path)
             .then(function(response) {
-              return response.data;
-            }, function(error) {
-              return $q.reject(error);
+
+              // Filter by doctor
+              var patientList = lodash.filter(response.data, function(appointment){
+                return true
+                // return appointment.doctor.clinicianCode == $rootScope.currentDoctor.clinicianCode
+              })
+
+              // Filter down to patient objects only
+              patientList = lodash.map(patientList, function(appointment){
+                // Build a mock patient object for now
+                var patient = {
+                  "name": appointment.firstName+" "+appointment.lastName,
+                  "userid": appointment.id,
+                  "photo": appointment.pic,
+                  "dob": appointment.dob,
+                  "time": appointment.time,
+                  "interests": ["eating","blogging","selfies"],
+                  "reason": "Suffering from lower-back pain after playing soccer on the weekend"
+                }
+
+                return patient
+                // return appointment.patient
+              })
+
+              return patientList;
+            }, function(e) {
+              $log.warn(e);
+              return $q.reject(e);
             });
-        },
-        // TODO
-        requestPasswordChange: function(/* email */) {
-          var defer = $q.defer();
-          $timeout(function() { defer.resolve(); });
-          return defer.promise;
-        },
-        // TODO
-        setPassword: function(/* password, authToken */) {
-          var defer = $q.defer();
-          $timeout(function() { defer.resolve(); });
-          return defer.promise;
-        },
-        // TODO
-        isValidPasswordChangeToken: function(/* authToken */) {
-          var defer = $q.defer();
-          $timeout(function() { defer.resolve(); });
-          return defer.promise;
-        },
-        /**
-         * Get the complete user including address and health information.
-         * @return {[type]} [description]
-         */
-        fetchUser: function(id) {
-          return fetchUserData(id)
-            .then(function(user) {
-              return initUser(user);
-            }, function() {
-              return $q.reject();
-            });
-        },
+        }
+        
       };
     };
   });
