@@ -122,7 +122,7 @@ angular.module('life.users')
         // initUser(doctor);
         // $http.defaults.headers.common.Authorization = doctor.authToken;
         $cookies.putObject(doctorCookieName, doctor, {
-          expires: moment().add(2,"days");
+          expires: moment().add(2,"days").toDate()
         });
 
         return $rootScope.currentDoctor = doctor;
