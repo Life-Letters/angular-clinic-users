@@ -121,7 +121,9 @@ angular.module('life.users')
 
         // initUser(doctor);
         // $http.defaults.headers.common.Authorization = doctor.authToken;
-        $cookies.putObject(doctorCookieName, doctor);
+        $cookies.putObject(doctorCookieName, doctor, {
+          expires: moment().add(2,"days");
+        });
 
         return $rootScope.currentDoctor = doctor;
       }
@@ -227,7 +229,7 @@ angular.module('life.users')
               return $q.reject(e);
             });
         }
-        
+
       };
     };
   });
