@@ -12,8 +12,9 @@ angular.module('life.users')
 
         var rootUrl = null,
             loginPath = '/login',
-            listDoctorsPath = '/doctors',
-            appointmentsPath = '/appointments',
+            doctorsPath = 'doctors/',
+            patientsPath = 'patients/',
+            appointmentsPath = 'appointments',
             behaviours = {},
             doctorCookieName = 'lifeLetterCurrentDoctor' + (window.cookies ? '-' + window.cookies : ''),
             appointmentCookieName = 'lifeLetterCurrentAppointment' + (window.cookies ? '-' + window.cookies : ''),
@@ -93,7 +94,7 @@ angular.module('life.users')
 
             // Get a doctor by ID
             function fetchDoctorById(id) {
-                var path = "https://auth.lifeletters.xyz/doctors/" + id;
+                var path = rootUrl + doctorsPath + id;
 
                 return $http.get(path)
                     .then(function(response) {
@@ -106,7 +107,7 @@ angular.module('life.users')
 
 
             function fetchPatientById(id) {
-                var path = "https://auth.lifeletters.xyz/patients/" + id;
+                var path = rootUrl + patientsPath + id;
 
                 return $http.get(path)
                     .then(function(response) {
