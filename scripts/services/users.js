@@ -83,13 +83,13 @@ angular.module('life.users')
                 return $rootScope.currentAppointment = appointment;
             }
 
-            function clearCurrentUser() {
+            function clearCurrentUser(fullLogOut) {
                 $http.defaults.headers.common.Authorization = '';
                 $rootScope.currentAppointment = null
                 $rootScope.currentDoctor = null;
                 $cookies.remove(doctorCookieName);
                 $cookies.remove(appointmentCookieName);
-                $cookies.remove(tokenCookieName)
+                if (fullLogOut) $cookies.remove(tokenCookieName);
             }
 
             // Get a doctor by ID
@@ -197,8 +197,8 @@ angular.module('life.users')
 
                 },
 
-                logOut: function() {
-                    clearCurrentUser();
+                logOut: function(fullLogOut) {
+                    clearCurrentUser(fullLogOut);
                 },
 
                 fetchAppointments: function() {
