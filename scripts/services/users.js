@@ -96,13 +96,25 @@ angular.module('life.users')
             function fetchDoctorById(id) {
                 var path = rootUrl + doctorsPath + id;
 
-                return $http.get(path)
-                    .then(function(response) {
-                        return response.data;
-                    }, function(e) {
-                        $log.warn(e);
-                        return $q.reject(e);
+                var data = "";
+                var deferred = $q.defer();
+
+                $http.get(path)
+                    .success(function(response, status, headers, config) {
+                        deferred.resolve(response);
+                    })
+                    .error(function(errResp) {
+                        deferred.reject({ message: "Really bad" });
                     });
+                return deferred.promise;
+
+                // return $http.get(path)
+                //     .then(function(response) {
+                //         return response.data;
+                //     }, function(e) {
+                //         $log.warn(e);
+                //         return $q.reject(e);
+                //     });
             }
 
 
@@ -129,37 +141,7 @@ angular.module('life.users')
                                 return [];
                             }
 
-                            var appointmentList = response.data.consults;
-
-                            // Append full Doctor and Patient from this
-
-                            var promises = [];
-
-                            angular.forEach(appointmentList, function(appointment) {
-
-                                // Gotta defer the promises so we get the whole object
-                                var deffered  = $q.defer();
-
-                                fetchDoctorById(appointment.doctorId).then(function(doctor){
-                                  deffered.resolve(doctor);
-                                  appointment.doctor = doctor[0];
-                                  appointment.doctor.photo = "http://www.coastalwatch.com/Content/Images/profile_noImage_sm.png";
-                                });
-                                
-                                fetchPatientById(appointment.patientId).then(function(patient){
-                                  deffered.resolve(patient);
-                                  appointment.patient = patient[0]
-                                  // Lets add a picture
-                                  appointment.patient.photo = "http://www.coastalwatch.com/Content/Images/profile_noImage_sm.png";
-                                })
-
-                                promises.push(deffered.promise);
-
-                            });
-
-                            return $q.all(promises).then(function(){
-                              return appointmentList
-                            })
+                            return response.data.consults;
 
                         }, function(e) {
                             $log.warn(e);
@@ -221,6 +203,13 @@ angular.module('life.users')
 
                 fetchAppointments: function() {
                   return fetchAppointments();
+                },
+
+                fetchDoctors: function(){
+                    var path = "http://private-22f56-lifemate.apiary-mock.com/id/doctors";
+                    return $http.get(path).then(function(response){
+                        return response.data.result;
+                    })
                 }
             };
         };
