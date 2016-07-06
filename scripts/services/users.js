@@ -47,7 +47,7 @@ angular.module('life.users')
             function setCurrentDoctor(doctor) {
                 // Ensure the doctor has the madatory details
                 var minimum = [
-                    'id'
+                    'doctorId'
                 ];
 
                 if (lodash.intersection(minimum, lodash.keys(doctor)).length !== minimum.length) {
@@ -205,11 +205,11 @@ angular.module('life.users')
                   return fetchAppointments();
                 },
 
-                fetchDoctors: function(){
-                    var path = "http://private-22f56-lifemate.apiary-mock.com/id/doctors";
-                    return $http.get(path).then(function(response){
-                        return response.data.result;
+                getDoctors: function(appointments){
+                    var doctors = _.map(appointments, function(a){
+                        return a.doctor
                     })
+                    return _.uniqBy(doctors,'doctorId');
                 }
             };
         };
